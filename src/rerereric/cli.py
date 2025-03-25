@@ -22,15 +22,15 @@ def main():
         rerereric.save_resolutions(context_lines=args.context)
         print(f"Saved post-resolution state")
     elif args.command == 'reapply_resolutions':
-        output = rerereric.reapply_resolutions(
+        resolved, unresolved = rerereric.reapply_resolutions(
             args.files,
             similarity_threshold=args.similarity,
             context_lines=args.context
         )
-        if output:
-            print(f"Successfully resolved conflicts in {output}")
-        else:
-            print("No matching resolutions found")
+        if resolved:
+            print(f"Successfully resolved conflicts in {resolved}")
+        if unresolved:
+            print(f"Failed to resolve conflicts in {unresolved}")
 
 if __name__ == "__main__":
     main()

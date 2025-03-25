@@ -119,7 +119,7 @@ def test_reapply_resolutions_simple(rerereric, fixture_path, tmp_path):
     shutil.copy(fixture_path / "simple_conflict.txt", new_conflict_file)
     
     # Try to resolve
-    resolved = rerereric.reapply_resolutions([new_conflict_file])
+    resolved, unresolved = rerereric.reapply_resolutions([new_conflict_file])
     assert resolved
     
     # Verify content matches resolution
@@ -142,7 +142,7 @@ def test_reapply_resolutions_complex(rerereric, fixture_path, tmp_path):
     shutil.copy(fixture_path / "complex_conflict_reappearance.txt", new_conflict_file)
     
     # Try to resolve
-    resolved = rerereric.reapply_resolutions([new_conflict_file])
+    resolved, unresolved = rerereric.reapply_resolutions([new_conflict_file])
     assert resolved
     
     # Verify content matches resolution

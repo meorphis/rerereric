@@ -347,12 +347,8 @@ class Rerereric:
         with open(file_path, 'r') as f:
             content = f.read().split('\n')
 
-        print(resolution)
-
         # replace the conflict with the resolution
         content[conflict_info['start_line']:conflict_info['end_line'] + 1] = resolution.split('\n')
-
-        print(content)
  
         with open(file_path, 'w') as f:
             f.write('\n'.join(content))
@@ -360,6 +356,7 @@ class Rerereric:
     def reapply_resolutions(self, file_paths, similarity_threshold=0.8, context_lines=2):
         """Try to resolve conflicts in a file using stored resolutions."""
         resolved = []
+        unresolved = []
 
         for file_path in file_paths:
             conflicts = self._extract_conflict_markers(file_path, context_lines)
@@ -374,8 +371,12 @@ class Rerereric:
                     resolved.append(file_path)
                     print(f"Applied resolution from {conflict_info['file_path']} "
                         f"at line {conflict_info['start_line']}")
+                else:
+                    unresolved.append(file_path)
+                    print(f"No similar resolution found for conflict in {file_path} "
+                        f"at line {conflict_info['start_line']}")
 
-        return resolved
+        return resolved, unresolved
 
     def _normalize_conflict_markers(self, lines):
         """Normalize conflict markers in a list of lines."""
