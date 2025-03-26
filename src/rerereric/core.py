@@ -14,6 +14,7 @@ import json
 import random
 import string
 import shutil
+import datetime
 
 START_MARKER = '<<<<<<<'
 MID_MARKER = '======='
@@ -25,6 +26,8 @@ class Rerereric:
         self.git_dir = git_dir if git_dir else self._get_git_dir()
         self.rerere_dir = Path(self.git_dir) / "rerereric"
         self.rerere_dir.mkdir(exist_ok=True)
+        (self.rerere_dir / 'pre').mkdir(exist_ok=True)
+        (self.rerere_dir / 'res').mkdir(exist_ok=True)
 
     def _hash_record(self, record):
         """Create a hash of the entire conflict record including context."""
@@ -33,7 +36,8 @@ class Rerereric:
             record.get("before_context", "") +
             record.get("after_context", "") +
             str(record.get("start_line", "")) +
-            str(record.get("end_line", ""))
+            str(record.get("end_line", "")) +
+            record.get("resolved_at", "")
         )
         return hashlib.sha256(content.encode()).hexdigest()[:16]
 
@@ -118,7 +122,7 @@ class Rerereric:
         
         # only look at files with matching conflict hash
         conflict_hash = self._hash_conflict(current_conflict)
-        for record_file in self.rerere_dir.glob(f"{conflict_hash}_*.json"):
+        for record_file in (self.rerere_dir / 'res').glob(f"{conflict_hash}_*.json"):
             with open(record_file) as f:
                 record = json.load(f)
                 
@@ -147,7 +151,8 @@ class Rerereric:
                         'line_distance': abs(record.get('start_line', 0) - current_line),
                         'file_path': record['file_path'],
                         'start_line': record['start_line'],
-                        'end_line': record['end_line']
+                        'end_line': record['end_line'],
+                        'resolved_at': record['resolved_at']
                     })
 
         if not matches:
@@ -157,10 +162,12 @@ class Rerereric:
         # 1. same file
         # 2. context similarity
         # 3. line number proximity
+        # 4. resolution timestamp
         matches.sort(key=lambda x: (
             x['same_file'],
             x['context_similarity'],
-            -x['line_distance']
+            -x['line_distance'],
+            x["resolved_at"]
         ), reverse=True)
 
         best_match = matches[0]
@@ -169,7 +176,7 @@ class Rerereric:
     def get_pre_path_from_file_path(self, file_path):
         """Get the path to the pre-resolution state for a file."""
         file_id = str(Path(file_path)).replace('/', '__')
-        return self.rerere_dir / f"{file_id}.pre"
+        return self.rerere_dir / 'pre' / f"{file_id}.pre"
 
     def get_file_path_from_pre_path(self, pre_path):
         """Get the path to the file from the pre-resolution state."""
@@ -207,7 +214,7 @@ class Rerereric:
     def save_resolutions(self, context_lines=2):
         """Save resolutions after conflicts have been manually resolved."""
         # find matching pre-resolution state
-        for pre_file in self.rerere_dir.glob("*.pre"):
+        for pre_file in (self.rerere_dir / 'pre').glob('*.pre'):
             file_path = self.get_file_path_from_pre_path(pre_file)
 
             # load and check pre-resolution content
@@ -317,7 +324,8 @@ class Rerereric:
                     "before_context": conflict["before_context"],
                     "after_context": conflict["after_context"],
                     "start_line": conflict["start_line"],
-                    "end_line": conflict["end_line"]
+                    "end_line": conflict["end_line"],
+                    "resolved_at": datetime.datetime.now().isoformat()
                 })
 
             # save each resolution separately
@@ -325,7 +333,7 @@ class Rerereric:
                 # create unique hash for this specific resolution
                 conflict_hash = self._hash_conflict(resolution["conflict"])
                 record_hash = self._hash_record(resolution)
-                record_path = self.rerere_dir / f"{conflict_hash}_{record_hash}.json"
+                record_path = self.rerere_dir / 'res' / f"{conflict_hash}_{record_hash}.json"
 
                 record = {
                     "file_path": str(file_path),
@@ -334,7 +342,8 @@ class Rerereric:
                     "before_context": resolution["before_context"],
                     "after_context": resolution["after_context"],
                     "start_line": resolution["start_line"],
-                    "end_line": resolution["end_line"]
+                    "end_line": resolution["end_line"],
+                    "resolved_at": resolution["resolved_at"]
                 }
                 with open(record_path, 'w') as f:
                     json.dump(record, f, indent=2)

@@ -12,7 +12,7 @@ Description-Content-Type: text/markdown
 
 # rerereric
 
-rerereric is inspired by [git rerere](https://git-scm.com/book/en/v2/Git-Tools-Rerere). It is a way to cache resolutions to merge conflicts and re-apply those resolutions if they occur again. Unlike `git rerere` it allows fuzzy matching of merge conflicts.
+rerereric is inspired by [git rerere](https://git-scm.com/book/en/v2/Git-Tools-Rerere). It is a way to cache resolutions to merge conflicts and re-apply those resolutions if they occur again. Unlike `git rerere` it allows fuzzy matching of the context lines surrounding the merge conflicts.
 
 In particular, for two merge conflict to be considered the same:
 - They do not need to have occurred in the same file
@@ -28,13 +28,13 @@ If a merge conflict has multiple matches in the cache, we prioritize by:
 
 ```sh
 # install from PyPI
-pip install https://github.com/meorphis/rerereric
+pip install https://github.com/stainless-api/rerereric
 ```
 
 ## Usage
 ```
-// save the versions of these files that contain the conflict markers
-rerereric mark_conflicts file1.ts file2.ts
+// save the versions of these files that contain the conflict markers (incl number of lines of non-white space context to save before and after the conflict)
+rerereric mark_conflicts --context=3 file1.ts file2.ts
 
 // [resolve conflicts in these files]
 
@@ -44,5 +44,5 @@ rerereric save_resolutions --context=2
 // [conflict later re-emerges, possibly in files with different names]
 
 // read resolutions from the cache and apply them if they match (using different files is ok)
-rerereric reapply_resolutions --context=2 --similarity=0.9 file1.ts file3.ts
+rerereric reapply_resolutions file1.ts file3.ts --context=2 --similarity=0.9
 ```
