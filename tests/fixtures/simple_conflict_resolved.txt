@@ -1,3 +1,0 @@
-This is some content before the conflict                                                                                                                                                   
-This is version B                                                                                                                                                                          
-This is some content after the conflict

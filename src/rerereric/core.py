@@ -273,6 +273,8 @@ class Rerereric:
 
                         matches = 0
 
+                        matched = False
+
                         # look for meaningful matching content after the conflict
                         # try to match next N non-empty lines
                         REQUIRED_MATCHING_LINES = 3
@@ -281,16 +283,17 @@ class Rerereric:
                             # once we hit the next conflict marker, we're obviously past the resolution, so
                             # let's use whatever we have stored in post_end
                             if pre_content[pre_line] == START_MARKER:
+                                matched = matches >= 1
                                 break
 
                             if post_content[post_line] == pre_content[pre_line]:
-                                # we got a match, so if we loop again we'll check the next line
-                                pre_line += 1
-                                post_line += 1
-
                                 # only actually count the match if it's a non-empty line
                                 if pre_content[pre_line].strip():
                                     matches += 1
+
+                                # we got a match, so if we loop again we'll check the next line
+                                pre_line += 1
+                                post_line += 1
 
                             else:
                                 # we got a mismatch, so we'll try the next line in the post-resolution content
@@ -303,11 +306,19 @@ class Rerereric:
 
                             if matches == REQUIRED_MATCHING_LINES:
                                 break
+                                
+                        else:
+                            # consider it a match if we hit the content end while matching
+                            matched = matches >= 1
+
+                        matched = matched or matches >= REQUIRED_MATCHING_LINES
+
+                        print(pre_line, post_line, matches)
 
                         resolution_length = post_end - post_start + 1
                         largest_conflict_part = max(len(part) for part in parts)
 
-                        if matches < REQUIRED_MATCHING_LINES:
+                        if not matched:
                             # if we didn't find enough matching lines, assume that we didn't find a real match
                             continue
 
