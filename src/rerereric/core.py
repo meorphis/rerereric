@@ -201,13 +201,13 @@ class Rerereric:
         if DIFF_3_MID_MARKER in parts:
             diff3_mid = parts.index(DIFF_3_MID_MARKER)
             return [
-                parts[start:mid],
-                parts[mid + 1:diff3_mid],
-                parts[diff3_mid + 1:end]
+                parts[start + 1:diff3_mid],
+                parts[diff3_mid + 1:mid],
+                parts[mid + 1:end]
             ]
         else:
             return [
-                parts[start:mid],
+                parts[start + 1:mid],
                 parts[mid + 1:end]
             ]
 
@@ -385,7 +385,7 @@ class Rerereric:
             for conflict_info in reversed(conflicts):
                 resolution, confidence = self._find_similar_resolution(conflict_info, similarity_threshold, context_lines)
 
-                if resolution:
+                if resolution is not None:
                     print(f"Found similar resolution with {confidence:.2%} confidence")
                     self._apply_resolution(file_path, conflict_info, resolution)
                     resolved.append(file_path)
