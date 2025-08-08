@@ -15,6 +15,7 @@ import random
 import string
 import shutil
 import datetime
+import urllib.parse
 
 START_MARKER = '<<<<<<<'
 MID_MARKER = '======='
@@ -175,11 +176,30 @@ class Rerereric:
 
     def get_pre_path_from_file_path(self, file_path):
         """Get the path to the pre-resolution state for a file."""
-        file_id = str(Path(file_path)).replace('/', '__')
+        file_id = urllib.parse.quote(str(Path(file_path)), safe='')
         return self.rerere_dir / 'pre' / f"{file_id}.pre"
 
     def get_file_path_from_pre_path(self, pre_path):
         """Get the path to the file from the pre-resolution state."""
+        if self.should_get_file_path_from_pre_path_old(pre_path):
+            return self.get_file_path_from_pre_path_old(pre_path)
+
+        file_id = pre_path.stem
+        return urllib.parse.unquote(file_id.replace('.pre', '')).replace(str(self.rerere_dir) + '/', '')
+
+    def should_get_file_path_from_pre_path_old(self, pre_path):
+        if '%2F' in pre_path.stem:
+            return False
+
+        # only use old method if we have high confidence it was encoded with __'s (no slashes encoded
+        # as %2F, no __ at the start of the stem, and at least one __ in the stem)
+        if '__' in pre_path.stem and not pre_path.stem.startswith('__'):
+            return True
+
+        return False
+
+    def get_file_path_from_pre_path_old(self, pre_path):
+        """Get the path to the file from the pre-resolution state, old version where we used to replace slashes with __."""
         file_id = pre_path.stem
         return file_id.replace('__', '/').replace('.pre', '').replace(str(self.rerere_dir) + '/', '')
 
